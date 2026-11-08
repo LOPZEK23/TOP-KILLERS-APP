@@ -432,7 +432,7 @@ async function cargarPartidasSupabase() {
         tag:normalizeTag(t.tag),
         name:t.nombre||"Equipo",
         logoId:"",
-        players:(t.jugadores||[]).slice(0,6).map(normalizePlayer)
+        players:(t.jugadores||[]).slice(0,8).map(normalizePlayer)
       }));
 
       (Array.isArray(oldResults)?oldResults:[]).forEach(r=>{
@@ -995,7 +995,7 @@ if (type === "teams" && isOfficialRanking) {
 
     $("teamLogo").dataset.imageId = "";
 
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 8; i++) {
         $(`playerPhoto${i}`).dataset.imageId = "";
     }
 
@@ -1006,7 +1006,7 @@ if (type === "teams" && isOfficialRanking) {
         logoPreview.hidden = true;
     }
 
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 8; i++) {
         const preview = $(`playerPreview${i}`);
 
         if (preview) {
@@ -1135,8 +1135,8 @@ $("rosterList").addEventListener("click", e => {
         logoPreview.hidden = false;
     }
 
-    // Limpiar los seis espacios de jugadores
-    for (let i = 1; i <= 6; i++) {
+    // Limpiar los ocho espacios de jugadores
+    for (let i = 1; i <= 8; i++) {
         $("playerName" + i).value = "";
         $("playerGameId" + i).value = "";
 
@@ -1155,7 +1155,7 @@ $("rosterList").addEventListener("click", e => {
     team.players.forEach((player, index) => {
         const i = index + 1;
 
-        if (i > 6) return;
+        if (i > 8) return;
 
         $("playerName" + i).value = player.name;
         $("playerGameId" + i).value = player.gameId || "";
@@ -1196,7 +1196,7 @@ $("rosterList").addEventListener("click", e => {
 
     const players = [];
 
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 8; i++) {
         const nickname = $(`playerName${i}`).value.trim();
 
         if (nickname) {
