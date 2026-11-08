@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#08090d">
+  <title>Panel de Torneo | Esports</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- LOGIN DE ADMINISTRADOR -->
+  <section id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="brand-mark">E</div>
+      <h1>ESPORTS</h1>
+      <p>Acceso de administrador</p>
+
+      <form id="loginForm">
+        <label for="loginEmail">Correo electrónico</label>
+        <input
+          type="email"
+          id="loginEmail"
+          placeholder="Tu correo"
+          required
+        >
+
+        <label for="loginPassword">Contraseña</label>
+        <input
+          type="password"
+          id="loginPassword"
+          placeholder="Tu contraseña"
+          required
+        >
+
+        <button type="submit" class="button button-primary full-width">
+          Iniciar sesión
+        </button>
+
+        <p id="loginError"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- PANEL PRINCIPAL -->
+  <div class="app-shell" id="appShell" hidden>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">E</div>
+        <div>
+          <strong>ESPORTS</strong>
+          <span>TOURNAMENT PANEL</span>
+        </div>
+      </div>
+
+      <div class="sidebar-label">MENÚ PRINCIPAL</div>
+
+      <nav class="main-nav">
+        <button class="nav-link active" data-view="dashboard">
+          <span>▦</span> Panel general
+        </button>
+
+        <button class="nav-link" data-view="teams">
+          <span>♙</span> Equipos y rosters
+        </button>
+
+        <button class="nav-link" data-view="register">
+          <span>＋</span> Registrar partida
+        </button>
+
+        <button class="nav-link" data-view="history">
+          <span>◷</span> Historial de partidas
+        </button>
+
+        <button class="nav-link" data-view="rankings">
+          <span>♛</span> Clasificaciones
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="storage-note">
+          <span class="status-dot"></span>
+          <div>
+            <b>Guardado en Supabase</b>
+            <small>Base de datos en la nube</small>
+          </div>
+        </div>
+
+        <p>Realizado para administrar estadísticas competitivas.</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Abrir menú">
+          ☰
+        </button>
+
+        <div>
+          <span class="eyebrow">ADMINISTRACIÓN DEL TORNEO</span>
+          <h1 id="pageTitle">Panel general</h1>
+        </div>
+
+        <div class="top-actions">
+          <label class="week-control">
+            Semana
+            <select id="weekSelect"></select>
+          </label>
+
+          <button class="button button-outline" id="importBtn">
+            Importar respaldo
+          </button>
+
+          <button class="button button-outline" id="exportBtn">
+            Exportar respaldo
+          </button>
+        </div>
+      </header>
+
+      <!-- PANEL GENERAL -->
+      <section class="view active" id="view-dashboard">
+
+        <div class="welcome-row">
+          <div>
+            <h2>Resumen competitivo</h2>
+            <p>Estadísticas acumuladas de lunes a sábado.</p>
+          </div>
+          <span class="week-pill" id="dashboardWeekLabel">Semana actual</span>
+        </div>
+
+        <div class="stats-grid">
+
+          <article class="stat-card">
+            <span class="stat-icon red">⚔</span>
+            <div>
+              <small>KILLS DE LA SEMANA</small>
+              <strong id="statKills">0</strong>
+              <em id="statMatches">0 partidas registradas</em>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-icon gold">♙</span>
+            <div>
+              <small>EQUIPOS INSCRITOS</small>
+              <strong id="statTeams">0</strong>
+              <em>Rosters registrados</em>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-icon blue">♛</span>
+            <div>
+              <small>JUGADORES CON KILLS</small>
+              <strong id="statPlayers">0</strong>
+              <em>En la semana seleccionada</em>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <span class="stat-icon green">▣</span>
+            <div>
+              <small>PARTIDAS JUGADAS</small>
+              <strong id="statMatchCount">0</strong>
+              <em>Registros guardados</em>
+            </div>
+          </article>
+
+        </div>
+
+        <div class="dashboard-grid">
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">RENDIMIENTO INDIVIDUAL</span>
+                <h3>Top jugadores · MVP</h3>
+              </div>
+              <span class="mini-tag">SEMANA</span>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pos.</th>
+                    <th>Jugador</th>
+                    <th>Equipo</th>
+                    <th>Kills</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardMvp"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">RENDIMIENTO POR EQUIPO</span>
+                <h3>Equipos más agresivos</h3>
+              </div>
+              <span class="mini-tag red-tag">SEMANA</span>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pos.</th>
+                    <th>Equipo</th>
+                    <th>Tag</th>
+                    <th>Kills</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboardTeams"></tbody>
+              </table>
+            </div>
+          </article>
+
+        </div>
+
+        <article class="panel recent-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">ÚLTIMOS REGISTROS</span>
+              <h3>Partidas recientes</h3>
+            </div>
+            <button class="text-button" data-go="history">
+              Ver historial →
+            </button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Día</th>
+                  <th>Partida</th>
+                  <th>Equipo</th>
+                  <th>Total kills</th>
+                </tr>
+              </thead>
+              <tbody id="recentMatches"></tbody>
+            </table>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- EQUIPOS Y ROSTERS -->
+      <section class="view" id="view-teams">
+
+        <div class="section-intro">
+          <div>
+            <span class="eyebrow">GESTIÓN DE PARTICIPANTES</span>
+            <h2>Equipos y rosters</h2>
+            <p>
+              Registra cada equipo una sola vez. El tag identifica al roster
+              en todas las partidas.
+            </p>
+          </div>
+        </div>
+
+        <div class="content-columns">
+
+          <article class="panel form-panel">
+
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">NUEVA INSCRIPCIÓN</span>
+                <h3>Registrar equipo</h3>
+              </div>
+            </div>
+
+            <form id="teamForm">
+
+              <!-- ID DEL EQUIPO EN EDICIÓN -->
+              <input type="hidden" id="editingTeamId">
+
+              <label for="teamTag">
+                Tag del equipo <span>*</span>
+              </label>
+
+              <input
+                id="teamTag"
+                maxlength="12"
+                placeholder="Ej. ALPH"
+                required
+              >
+
+              <label for="teamName">
+                Nombre del equipo <span>*</span>
+              </label>
+
+              <input
+                id="teamName"
+                maxlength="60"
+                placeholder="Ej. Alpha Esports"
+                required
+              >
+
+              <label for="teamLogo">Logo del equipo</label>
+
+              <input
+                id="teamLogo"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+              >
+
+              <div class="image-preview-wrap">
+                <img
+                  id="teamLogoPreview"
+                  class="image-preview team-logo-preview"
+                  alt="Vista previa del logo"
+                  hidden
+                >
+                <span id="teamLogoPlaceholder" class="image-placeholder">
+                  Vista previa del logo
+                </span>
+              </div>
+
+              <div class="form-label-row">
+                <label>Jugadores del roster <span>*</span></label>
+                <small>Hasta 6 jugadores</small>
+              </div>
+
+              <div class="player-inputs" id="playerInputs">
+
+                <div class="player-form-card">
+                  <b>Jugador 1</b>
+                  <input class="roster-player" id="playerName1" placeholder="Nickname" maxlength="40" required>
+                  <input id="playerGameId1" placeholder="ID de juego (opcional)" maxlength="40">
+                  <label class="file-label">
+                    Foto del jugador
+                    <input class="player-photo" id="playerPhoto1" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+                  </label>
+                  <img class="image-preview player-preview" id="playerPreview1" alt="Foto jugador 1" hidden>
+                </div>
+
+                <div class="player-form-card">
+                  <b>Jugador 2</b>
+                  <input class="roster-player" id="playerName2" placeholder="Nickname" maxlength="40">
+                  <input id="playerGameId2" placeholder="ID de juego (opcional)" maxlength="40">
+                  <label class="file-label">
+                    Foto del jugador
+                    <input class="player-photo" id="playerPhoto2" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+                  </label>
+                  <img class="image-preview player-preview" id="playerPreview2" alt="Foto jugador 2" hidden>
+                </div>
+
+                <div class="player-form-card">
+                  <b>Jugador 3</b>
+                  <input class="roster-player" id="playerName3" placeholder="Nickname" maxlength="40">
+                  <input id="playerGameId3" placeholder="ID de juego (opcional)" maxlength="40">
+                  <label class="file-label">
+                    Foto del jugador
+                    <input class="player-photo" id="playerPhoto3" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+                  </label>
+                  <img class="image-preview player-preview" id="playerPreview3" alt="Foto jugador 3" hidden>
+                </div>
+
+                <div class="player-form-card">
+                  <b>Jugador 4</b>
+                  <input class="roster-player" id="playerName4" placeholder="Nickname" maxlength="40">
+                  <input id="playerGameId4" placeholder="ID de juego (opcional)" maxlength="40">
+                  <label class="file-label">
+                    Foto del jugador
+                    <input class="player-photo" id="playerPhoto4" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+                  </label>
+                  <img class="image-preview player-preview" id="playerPreview4" alt="Foto jugador 4" hidden>
+                </div>
+
+                <div class="player-form-card">
+                  <b>Jugador 5</b>
+                  <input class="roster-player" id="playerName5" placeholder="Nickname" maxlength="40">
+                  <input id="playerGameId5" placeholder="ID de juego (opcional)" maxlength="40">
+                  <label class="file-label">
+                    Foto del jugador
+                    <input class="player-photo" id="playerPhoto5" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+                  </label>
+                  <img class="image-preview player-preview" id="playerPreview5" alt="Foto jugador 5" hidden>
+                </div>
+
+                <div class="player-form-card">
+                  <b>Jugador 6</b>
+                  <input class="roster-player" id="playerName6" placeholder="Nickname" maxlength="40">
+                  <input id="playerGameId6" placeholder="ID de juego (opcional)" maxlength="40">
+                  <label class="file-label">
+                    Foto del jugador
+                    <input class="player-photo" id="playerPhoto6" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+                  </label>
+                  <img class="image-preview player-preview" id="playerPreview6" alt="Foto jugador 6" hidden>
+                </div>
+
+              </div>
+
+              <div class="form-actions">
+                <button
+                  class="button button-primary full-width"
+                  type="submit"
+                  id="saveTeamBtn"
+                >
+                  Guardar equipo
+                </button>
+
+                <button
+                  class="button button-outline full-width"
+                  type="button"
+                  id="cancelTeamEditBtn"
+                  hidden
+                >
+                  Cancelar edición
+                </button>
+              </div>
+
+              <p class="form-hint">
+                El tag debe ser único. Puedes registrar hasta seis jugadores.
+                Las imágenes se guardan en Supabase.
+              </p>
+
+            </form>
+          </article>
+
+          <article class="panel roster-panel">
+
+            <div class="roster-header">
+  <div class="roster-header-info">
+    <span class="eyebrow">COMPETICIÓN OFICIAL</span>
+    <h3>LISTADO OFICIAL</h3>
+    <p>Equipos y jugadores inscritos en el torneo</p>
+  </div>
+
+  <div class="roster-header-count">
+    <span id="teamCount">0 equipos</span>
+    <small>REGISTRADOS</small>
+  </div>
+</div>
+
+<div class="roster-search">
+  <input
+    type="search"
+    id="rosterSearch"
+    placeholder="Buscar equipo, TAG o jugador..."
+    autocomplete="off"
+  >
+</div>
+
+            <div id="rosterList" class="roster-list"></div>
+
+          </article>
+
+        </div>
+      </section>
+
+      <!-- REGISTRAR PARTIDA -->
+      <section class="view" id="view-register">
+
+        <div class="section-intro">
+          <div>
+            <span class="eyebrow">CAPTURA DE RESULTADOS</span>
+            <h2>Registrar partida</h2>
+            <p>
+              Ingresa las kills individuales. El sistema calculará los
+              acumulados automáticamente.
+            </p>
+          </div>
+        </div>
+
+        <div class="register-layout">
+
+          <article class="panel form-panel match-form-panel">
+
+            <form id="matchForm">
+
+              <input type="hidden" id="editingMatchId">
+
+              <div class="form-grid">
+
+                <div>
+                  <label for="matchDate">
+                    Fecha de competición <span>*</span>
+                  </label>
+                  <input type="date" id="matchDate" required>
+                </div>
+
+                <div>
+                  <label for="matchTeam">
+                    Equipo <span>*</span>
+                  </label>
+                  <select id="matchTeam" required>
+                    <option value="">Selecciona un equipo</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="matchNumber">
+                    Número de partida <span>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="matchNumber"
+                    min="1"
+                    step="1"
+                    value="1"
+                    required
+                  >
+                </div>
+
+              </div>
+
+              <div class="kills-heading">
+                <div>
+                  <span class="eyebrow">RESULTADO INDIVIDUAL</span>
+                  <h3>Kills por jugador</h3>
+                </div>
+                <span class="mini-tag">SOLO NÚMEROS ENTEROS</span>
+              </div>
+
+              <div id="matchPlayers" class="match-players">
+                <div class="empty-state">
+                  Selecciona un equipo para cargar sus jugadores.
+                </div>
+              </div>
+
+              <div class="match-total">
+                <span>Total de kills de la partida</span>
+                <strong id="matchTotal">0</strong>
+              </div>
+
+              <div class="form-actions">
+                <button
+                  class="button button-primary"
+                  type="submit"
+                  id="saveMatchBtn"
+                >
+                  Guardar partida
+                </button>
+
+                <button
+                  class="button button-outline"
+                  type="button"
+                  id="cancelEditBtn"
+                  hidden
+                >
+                  Cancelar edición
+                </button>
+              </div>
+
+              <p class="form-hint">
+                Se permiten partidas múltiples por día y por equipo.
+                Cada registro queda guardado por separado.
+              </p>
+
+            </form>
+          </article>
+
+          <aside class="panel instructions-panel">
+            <span class="eyebrow">¿CÓMO FUNCIONA?</span>
+            <h3>Registro acumulativo</h3>
+
+            <ol>
+              <li>Selecciona el día en que se jugó.</li>
+              <li>Elige el equipo participante.</li>
+              <li>Indica el número de partida.</li>
+              <li>Escribe las kills de cada jugador.</li>
+              <li>Guarda. Los rankings se actualizan automáticamente.</li>
+            </ol>
+
+            <div class="info-callout">
+              Las semanas se calculan automáticamente de lunes a sábado.
+              No se permite registrar partidas los domingos.
+            </div>
+          </aside>
+
+        </div>
+      </section>
+
+      <!-- HISTORIAL -->
+      <section class="view" id="view-history">
+
+        <div class="section-intro">
+          <div>
+            <span class="eyebrow">REGISTROS GUARDADOS</span>
+            <h2>Historial de partidas</h2>
+            <p>
+              Consulta, corrige o elimina partidas sin modificar los demás
+              registros.
+            </p>
+          </div>
+        </div>
+
+        <article class="panel">
+
+          <div class="filters-row">
+
+            <label>
+              Equipo
+              <select id="historyTeam">
+                <option value="">Todos los equipos</option>
+              </select>
+            </label>
+
+            <label>
+              Día
+              <select id="historyDay">
+                <option value="">Toda la semana</option>
+                <option value="1">Lunes</option>
+                <option value="2">Martes</option>
+                <option value="3">Miércoles</option>
+                <option value="4">Jueves</option>
+                <option value="5">Viernes</option>
+                <option value="6">Sábado</option>
+              </select>
+            </label>
+
+            <span class="results-count" id="historyCount">0 partidas</span>
+
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Día</th>
+                  <th>Partida</th>
+                  <th>Equipo</th>
+                  <th>Detalle de kills</th>
+                  <th>Total</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="historyRows"></tbody>
+            </table>
+          </div>
+
+        </article>
+      </section>
+
+      <!-- CLASIFICACIONES -->
+      <section class="view" id="view-rankings">
+
+        <div class="section-intro">
+          <div>
+            <span class="eyebrow">TABLAS COMPETITIVAS</span>
+            <h2>Clasificaciones</h2>
+            <p>
+              Compara el rendimiento semanal y el acumulado de toda la
+              temporada.
+            </p>
+          </div>
+        </div>
+
+        <div class="ranking-tabs">
+          <button class="ranking-tab active" data-rank="weekly">
+            Semana seleccionada
+          </button>
+
+          <button class="ranking-tab" data-rank="season">
+            Temporada completa
+          </button>
+        </div>
+
+        <div class="dashboard-grid">
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">MVP</span>
+                <h3>Ranking individual</h3>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Pos.</th>
+                <th>Foto</th>
+                <th>Jugador</th>
+                <th>Equipo</th>
+                <th>Kills</th>
+            </tr>
+        </thead>
+        <tbody id="rankingMvp"></tbody>
+    </table>
+</div>
+</article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">AGRESIVIDAD</span>
+                <h3>Ranking de equipos</h3>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Pos.</th>
+                <th>Logo</th>
+                <th>Equipo</th>
+                <th>Kills</th>
+            </tr>
+        </thead>
+        <tbody id="rankingTeams"></tbody>
+    </table>
+</div>
+          </article>
+
+        </div>
+      </section>
+
+      <footer class="app-footer">
+        <span>ESPORTS TOURNAMENT PANEL</span>
+        <span>Recuerda exportar respaldos periódicamente.</span>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- IMPORTAR RESPALDO -->
+  <input
+    type="file"
+    id="importFile"
+    accept="application/json,.json"
+    hidden
+  >
+
+  <!-- NOTIFICACIONES -->
+  <div class="toast" id="toast" role="status"></div>
+
+  <!-- CONEXIÓN Y FUNCIONES -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="script.js"></script>
+
+</body>
+</html>
