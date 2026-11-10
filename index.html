@@ -66,6 +66,14 @@
           <span>♙</span> Equipos y rosters
         </button>
 
+        <button class="nav-link" data-view="groups">
+          <span>▦</span> Administrar grupos
+        </button>
+
+        <button class="nav-link" data-view="sessions">
+          <span>▤</span> Registrar jornada
+        </button>
+
         <button class="nav-link" data-view="register">
           <span>＋</span> Registrar partida
         </button>
@@ -478,6 +486,127 @@
 
         </div>
       </section>
+
+      <!-- ADMINISTRAR GRUPOS -->
+<section class="view" id="view-groups">
+
+  <div class="section-intro">
+    <div>
+      <span class="eyebrow">ORGANIZACIÓN DEL TORNEO</span>
+      <h2>Administrar grupos</h2>
+      <p>Distribuye los 24 equipos en cuatro grupos de seis.</p>
+    </div>
+  </div>
+
+  <div class="groups-grid" id="groupsContainer"></div>
+
+</section>
+
+<!-- REGISTRAR JORNADA -->
+<section class="view" id="view-sessions">
+
+  <div class="section-intro">
+    <div>
+      <span class="eyebrow">CAPTURA DE RESULTADOS</span>
+      <h2>Registrar jornada</h2>
+      <p>Registra las cinco partidas de cada sala en un solo proceso.</p>
+    </div>
+  </div>
+
+  <div class="panel form-panel">
+
+  <label for="sessionDate">Fecha de la jornada</label>
+  <input type="date" id="sessionDate" required>
+
+</div>
+
+<div class="dashboard-grid">
+
+  <!-- SALA 1 -->
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Sala 1</h3>
+    </div>
+
+    <label for="room1GroupA">Primer grupo</label>
+    <select id="room1GroupA">
+      <option value="">Seleccionar grupo</option>
+      <option value="A">Grupo A</option>
+      <option value="B">Grupo B</option>
+      <option value="C">Grupo C</option>
+      <option value="D">Grupo D</option>
+    </select>
+
+    <label for="room1GroupB">Segundo grupo</label>
+    <select id="room1GroupB">
+      <option value="">Seleccionar grupo</option>
+      <option value="A">Grupo A</option>
+      <option value="B">Grupo B</option>
+      <option value="C">Grupo C</option>
+      <option value="D">Grupo D</option>
+    </select>
+
+    <div id="room1Teams"></div>
+
+    <button type="button" id="saveRoom1Btn">
+    Guardar resultados de Sala 1
+</button>
+
+  </article>
+
+  <!-- SALA 2 -->
+  <article class="panel">
+    <div class="panel-heading">
+      <h3>Sala 2</h3>
+    </div>
+
+    <label for="room2GroupA">Primer grupo</label>
+    <select id="room2GroupA">
+      <option value="">Seleccionar grupo</option>
+      <option value="A">Grupo A</option>
+      <option value="B">Grupo B</option>
+      <option value="C">Grupo C</option>
+      <option value="D">Grupo D</option>
+    </select>
+
+    <label for="room2GroupB">Segundo grupo</label>
+    <select id="room2GroupB">
+      <option value="">Seleccionar grupo</option>
+      <option value="A">Grupo A</option>
+      <option value="B">Grupo B</option>
+      <option value="C">Grupo C</option>
+      <option value="D">Grupo D</option>
+    </select>
+
+    <div id="room2Teams"></div>
+
+    <button type="button" id="saveRoom2Btn">
+    Guardar resultados de Sala 2
+</button>
+
+  </article>
+
+</div>
+
+</section>
+
+<!-- VENTANA DE REGISTRO DE KILLS -->
+<div id="sessionKillsModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="panel-heading">
+            <h3 id="sessionKillsTitle">Registrar kills</h3>
+            <button type="button" id="closeSessionKills">✕</button>
+        </div>
+
+        <div id="sessionKillsPlayers"></div>
+
+        <div class="form-actions">
+            <button type="button" id="saveSessionKills">
+                Guardar registro
+            </button>
+        </div>
+    </div>
+</div>
 
       <!-- REGISTRAR PARTIDA -->
       <section class="view" id="view-register">

@@ -7,7 +7,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const OLD_TEAMS_KEY = "torneo_equipos";
   const OLD_RESULTS_KEY = "torneo_resultados";
   const $ = (id) => document.getElementById(id);
-  const state = { teams: [], matches: [], selectedWeek: "", rankingMode: "weekly", images: new Map() };
+  const state = {
+    teams: [],
+    matches: [],
+    groups: [],
+    selectedWeek: "",
+    rankingMode: "weekly",
+    images: new Map(),
+sessionResults: {
+    1: {},
+    2: {}
+  } 
+};
 
   let supabaseReady = false;
 
@@ -46,6 +57,7 @@ async function verificarSesion() {
 
     await cargarEquiposSupabase();
     await cargarPartidasSupabase();
+    await cargarGruposSupabase();
 }
 
 $("loginForm").addEventListener("submit", async (e) => {
@@ -80,6 +92,7 @@ $("loginForm").addEventListener("submit", async (e) => {
     supabaseReady = false;
 
         await cargarEquiposSupabase();
+        await cargarGruposSupabase();
         await cargarPartidasSupabase();
 });
 
@@ -146,12 +159,36 @@ async function cargarEquiposSupabase() {
     }
 }
 
+async function cargarGruposSupabase() {
+    try {
+        const { data, error } = await supabaseClient
+            .from("team_groups")
+            .select("team_id, group_name");
+
+        if (error) throw error;
+
+        state.groups = data || [];
+
+        renderGroups();
+
+        console.log(
+            "Asignaciones de grupos cargadas:",
+            state.groups.length
+        );
+
+    } catch (error) {
+        console.error("Error cargando grupos:", error);
+        showToast("No se pudieron cargar los grupos.");
+    }
+}
+
 async function cargarPartidasSupabase() {
     let todasLasPartidas = [];
     let desde = 0;
     const limite = 1000;
 
     try {
+        // CARGAR PARTIDAS ANTIGUAS
         while (true) {
             const { data, error } = await supabaseClient
                 .from("matches")
@@ -181,15 +218,14 @@ async function cargarPartidasSupabase() {
 
             todasLasPartidas = todasLasPartidas.concat(data || []);
 
-            if (!data || data.length < limite) {
-                break;
-            }
+            if (!data || data.length < limite) break;
 
             desde += limite;
         }
 
-        state.matches = todasLasPartidas.map(match => ({
+        const partidasAntiguas = todasLasPartidas.map(match => ({
             id: match.id,
+            source: "old",
             teamId: match.team_id,
             teamName: match.teams?.name || "",
             teamTag: match.teams?.tag || "",
@@ -203,20 +239,92 @@ async function cargarPartidasSupabase() {
             }))
         }));
 
+        // CARGAR JORNADAS NUEVAS
+        let todasLasJornadas = [];
+        let desdeJornadas = 0;
+
+        while (true) {
+            const { data, error } = await supabaseClient
+                .from("room_sessions")
+                .select(`
+                    id,
+                    session_date,
+                    room_number,
+                    room_games (
+                        id,
+                        game_number,
+                        room_team_results (
+                            id,
+                            team_id,
+                            teams (
+                                name,
+                                tag
+                            ),
+                            room_player_kills (
+                                player_id,
+                                kills,
+                                players (
+                                    nickname
+                                )
+                            )
+                        )
+                    )
+                `)
+                .order("session_date", { ascending: false })
+                .range(
+                    desdeJornadas,
+                    desdeJornadas + limite - 1
+                );
+
+            if (error) throw error;
+
+            todasLasJornadas = todasLasJornadas.concat(data || []);
+
+            if (!data || data.length < limite) break;
+
+            desdeJornadas += limite;
+        }
+
+        const partidasNuevas = todasLasJornadas.flatMap(session =>
+            (session.room_games || []).flatMap(game =>
+                (game.room_team_results || []).map(result => ({
+                    id: result.id,
+                    source: "room",
+                    roomNumber: session.room_number,
+                    teamId: result.team_id,
+                    teamName: result.teams?.name || "",
+                    teamTag: result.teams?.tag || "",
+                    date: session.session_date,
+                    weekId: weekId(session.session_date),
+                    matchNumber: game.game_number,
+                    players: (result.room_player_kills || []).map(item => ({
+                        id: item.player_id,
+                        name: item.players?.nickname || "",
+                        kills: item.kills
+                    }))
+                }))
+            )
+        );
+
+        // UNIR AMBAS FUENTES
+        state.matches = [
+            ...partidasAntiguas,
+            ...partidasNuevas
+        ];
+
         state.selectedWeek = currentWeek();
 
         renderAll();
 
-        console.log(
-            "Partidas cargadas correctamente:",
-            state.matches.length
-        );
+        console.log("Partidas antiguas:", partidasAntiguas.length);
+        console.log("Partidas de jornadas:", partidasNuevas.length);
+        console.log("Total de partidas cargadas:", state.matches.length);
 
     } catch (error) {
         console.error("Error cargando partidas:", error);
         showToast("No se pudieron cargar todas las partidas.");
     }
-} 
+}
 
   const dayNames = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   let imageDb;
@@ -251,7 +359,8 @@ async function cargarPartidasSupabase() {
     return dateString(d);
   }
 
-  function weekId(value) { return mondayOf(value); }
+  function weekId(value) { return mondayOf(value); 
+  }
 
   function weekLabel(id) {
     return id ? `${formatDate(id)} – ${formatDate(saturdayOf(id))}` : "Semana";
@@ -717,8 +826,10 @@ if (type === "teams" && isOfficialRanking) {
 }
 
   function renderDashboard() {
-    const matches=selectedWeekMatches();
-    const agg=aggregates(matches);
+    const matches = state.matches;
+    const agg = aggregates(matches);
+
+    $("dashboardWeekLabel").textContent = "Todo el torneo";
 
     $("dashboardWeekLabel").textContent=weekLabel(state.selectedWeek);
     $("statKills").textContent=agg.teams.reduce((s,t)=>s+t.kills,0).toLocaleString("es-CO");
@@ -824,6 +935,519 @@ if (type === "teams" && isOfficialRanking) {
         `<option value="">Todos los equipos</option>${opts}`;
 }
 
+function renderGroups() {
+    const container = $("groupsContainer");
+
+    if (!container) return;
+
+    const groupNames = ["A", "B", "C", "D"];
+
+    container.innerHTML = groupNames.map(groupName => {
+        const assigned = state.groups.filter(
+            item => item.group_name === groupName
+        );
+
+        const teams = assigned.map(item =>
+            state.teams.find(team => team.id === item.team_id)
+        ).filter(Boolean);
+
+        const availableTeams = state.teams.filter(team =>
+            !assigned.some(item => item.team_id === team.id)
+        );
+
+        return `
+            <div class="group-card">
+
+                <div class="group-card-header">
+                    <h3>GRUPO ${groupName}</h3>
+                    <span>${teams.length} / 6 equipos</span>
+                </div>
+
+                <select class="group-team-select"
+                    data-group="${groupName}">
+
+                    <option value="">Agregar o mover equipo...</option>
+
+                    ${availableTeams.map(team => `
+                        <option value="${team.id}">
+                            ${escapeHTML(team.tag)} - ${escapeHTML(team.name)}
+                        </option>
+                    `).join("")}
+
+                </select>
+
+                <div class="group-team-list">
+
+                    ${teams.length
+                        ? teams.map(team => `
+                            <div class="group-team-item">
+
+    <button
+        type="button"
+        class="remove-group-team"
+        data-remove-team="${team.id}"
+        title="Quitar equipo"
+        aria-label="Quitar ${escapeHTML(team.name)}">
+        <svg viewBox="0 0 24 24" width="15" height="15"
+            fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M3 6h18"/>
+            <path d="M8 6V4h8v2"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v5M14 11v5"/>
+        </svg>
+    </button>
+
+    <div class="group-team-logo">
+        ${imageMarkup(team.logoId, "team-logo", `Logo ${team.name}`)}
+    </div>
+
+    <b class="group-team-tag">${escapeHTML(team.tag)}</b>
+
+    <span class="group-team-name">
+        ${escapeHTML(team.name)}
+    </span>
+
+</div>
+                        `).join("")
+                        : `<p class="empty-state">Sin equipos asignados</p>`
+                    }
+
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    // Asignar o mover equipos
+    container.onchange = async (event) => {
+        const select = event.target.closest(".group-team-select");
+
+        if (!select || !select.value) return;
+
+        const teamId = select.value;
+        const groupName = select.dataset.group;
+
+        const groupCount = state.groups.filter(
+            item => item.group_name === groupName
+        ).length;
+
+        if (groupCount >= 6) {
+            showToast("Este grupo ya tiene 6 equipos.");
+            renderGroups();
+            return;
+        }
+
+        const { error } = await supabaseClient
+            .from("team_groups")
+            .upsert(
+                {
+                    team_id: teamId,
+                    group_name: groupName
+                },
+                { onConflict: "team_id" }
+            );
+
+        if (error) {
+            console.error(error);
+            showToast("No se pudo asignar el equipo.");
+            return;
+        }
+
+        state.groups = state.groups.filter(
+            item => item.team_id !== teamId
+        );
+
+        state.groups.push({
+            team_id: teamId,
+            group_name: groupName
+        });
+
+        renderGroups();
+        showToast("Equipo asignado correctamente.");
+    };
+
+    // Quitar equipos de un grupo
+    container.onclick = async (event) => {
+        const button = event.target.closest("[data-remove-team]");
+
+        if (!button) return;
+
+        const teamId = button.dataset.removeTeam;
+
+        const { error } = await supabaseClient
+            .from("team_groups")
+            .delete()
+            .eq("team_id", teamId);
+
+        if (error) {
+            console.error(error);
+            showToast("No se pudo quitar el equipo.");
+            return;
+        }
+
+        state.groups = state.groups.filter(
+            item => item.team_id !== teamId
+        );
+
+        renderGroups();
+        showToast("Equipo retirado del grupo.");
+    };
+}
+
+
+function renderSessionTeams(roomNumber) {
+    const groupA = $(`room${roomNumber}GroupA`).value;
+    const groupB = $(`room${roomNumber}GroupB`).value;
+    const container = $(`room${roomNumber}Teams`);
+
+    if (!groupA || !groupB) {
+        container.innerHTML = `
+            <div class="empty-state">
+                Selecciona los dos grupos.
+            </div>
+        `;
+        return;
+    }
+
+    if (groupA === groupB) {
+        container.innerHTML = `
+            <div class="empty-state">
+                Debes seleccionar dos grupos diferentes.
+            </div>
+        `;
+        return;
+    }
+
+    const assignedTeams = state.groups
+        .filter(item =>
+            item.group_name === groupA ||
+            item.group_name === groupB
+        )
+        .map(item =>
+            state.teams.find(team => team.id === item.team_id)
+        )
+        .filter(Boolean);
+
+    if (!assignedTeams.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                Estos grupos todavía no tienen equipos asignados.
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="session-table-wrapper">
+            <table class="session-table">
+                <thead>
+                    <tr>
+                        <th>Equipo</th>
+                        ${[1, 2, 3, 4, 5].map(game => `
+                            <th>Partida ${game}</th>
+                        `).join("")}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${assignedTeams.map(team => `
+                        <tr>
+                            <td>
+                                <strong>${team.tag}</strong>
+                                <span>${team.name}</span>
+                            </td>
+                            ${[1, 2, 3, 4, 5].map(game => `
+                                <td>
+                                    <button
+                                        type="button"
+                                        class="session-game-btn"
+                                        data-room="${roomNumber}"
+                                        data-team="${team.id}"
+                                        data-game="${game}">
+                                        Registrar
+                                    </button>
+                                </td>
+                            `).join("")}
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+[1, 2].forEach(roomNumber => {
+    $(`room${roomNumber}GroupA`).addEventListener("change", () => {
+        renderSessionTeams(roomNumber);
+    });
+
+    $(`room${roomNumber}GroupB`).addEventListener("change", () => {
+        renderSessionTeams(roomNumber);
+    });
+});
+
+document.addEventListener("click", event => {
+    const button = event.target.closest(".session-game-btn");
+
+    if (!button) return;
+
+    const roomNumber = button.dataset.room;
+    const teamId = button.dataset.team;
+    const gameNumber = button.dataset.game;
+
+    currentSessionSelection = {
+    roomNumber,
+    teamId,
+    gameNumber
+};
+
+    const team = state.teams.find(item => item.id === teamId);
+
+    if (!team) return;
+
+    $("sessionKillsTitle").textContent =
+        `${team.tag} - ${team.name} | Partida ${gameNumber} | Sala ${roomNumber}`;
+
+    $("sessionKillsPlayers").innerHTML = team.players.map(player => `
+    <div class="match-player-row">
+        <span class="match-player-name">
+            ${imageMarkup(player.photoId, "player-avatar", `Foto de ${escapeHTML(player.name)}`)}
+            ${escapeHTML(player.name)}
+        </span>
+
+        <input
+            type="number"
+            min="0"
+            step="1"
+            class="kill-input"
+            data-player-id="${escapeHTML(player.id)}"
+            value="${Number(state.sessionResults[roomNumber][`${gameNumber}_${teamId}`]?.[player.id]) || 0}"
+            placeholder="Kills"
+        >
+    </div>
+`).join("");
+
+    $("sessionKillsModal").classList.remove("hidden");
+});
+
+$("closeSessionKills").addEventListener("click", () => {
+    $("sessionKillsModal").classList.add("hidden");
+});
+
+$("sessionKillsModal").addEventListener("click", event => {
+    if (event.target.id === "sessionKillsModal") {
+        $("sessionKillsModal").classList.add("hidden");
+    }
+});
+
+let currentSessionSelection = null;
+
+$("saveSessionKills").addEventListener("click", () => {
+    if (!currentSessionSelection) return;
+
+    const { roomNumber, teamId, gameNumber } = currentSessionSelection;
+
+    const kills = {};
+
+    $("sessionKillsPlayers").querySelectorAll(".kill-input").forEach(input => {
+        kills[input.dataset.playerId] = Math.max(0, Number(input.value) || 0);
+    });
+
+    const key = `${gameNumber}_${teamId}`;
+
+    state.sessionResults[roomNumber][key] = kills;
+
+    $("sessionKillsModal").classList.add("hidden");
+
+    showToast("Kills guardadas temporalmente.");
+});
+
+async function guardarSala(roomNumber) {
+    const groupA = $(`room${roomNumber}GroupA`).value;
+    const groupB = $(`room${roomNumber}GroupB`).value;
+    const date = $("sessionDate").value;
+    const saveButton = $(`saveRoom${roomNumber}Btn`);
+
+    if (!date) {
+        showToast("Selecciona la fecha de la jornada.");
+        return;
+    }
+
+    if (!groupA || !groupB || groupA === groupB) {
+        showToast("Selecciona dos grupos diferentes.");
+        return;
+    }
+
+    const assignedTeams = state.groups
+        .filter(item =>
+            item.group_name === groupA ||
+            item.group_name === groupB
+        )
+        .map(item =>
+            state.teams.find(team => team.id === item.team_id)
+        )
+        .filter(Boolean);
+
+    if (!assignedTeams.length) {
+        showToast("No hay equipos registrados en esos grupos.");
+        return;
+    }
+
+    const preparedGames = [];
+
+    for (let game = 1; game <= 5; game++) {
+        const gameTeams = assignedTeams.map(team => {
+            const key = `${game}_${team.id}`;
+            const savedKills =
+                state.sessionResults[roomNumber][key] || {};
+
+            return {
+                teamId: team.id,
+                players: team.players.map(player => ({
+                    playerId: player.id,
+                    kills: Math.max(
+                        0,
+                        Number(savedKills[player.id]) || 0
+                    )
+                }))
+            };
+        });
+
+        preparedGames.push({
+            gameNumber: game,
+            teams: gameTeams
+        });
+    }
+
+    let sessionId = null;
+    saveButton.disabled = true;
+
+    try {
+        // Crear la jornada de la sala
+        const { data: session, error: sessionError } =
+            await supabaseClient
+                .from("room_sessions")
+                .insert({
+                    session_date: date,
+                    room_number: roomNumber,
+                    group_a: groupA,
+                    group_b: groupB
+                })
+                .select("id")
+                .single();
+
+        if (sessionError) throw sessionError;
+
+        sessionId = session.id;
+
+        // Crear las cinco partidas
+        const { data: games, error: gamesError } =
+            await supabaseClient
+                .from("room_games")
+                .insert(
+                    preparedGames.map(game => ({
+                        room_session_id: sessionId,
+                        game_number: game.gameNumber
+                    }))
+                )
+                .select("id, game_number");
+
+        if (gamesError) throw gamesError;
+
+        // Preparar resultados de equipos
+        const teamRows = [];
+
+        preparedGames.forEach(game => {
+            const savedGame = games.find(
+                item => item.game_number === game.gameNumber
+            );
+
+            game.teams.forEach(team => {
+                teamRows.push({
+                    room_game_id: savedGame.id,
+                    team_id: team.teamId
+                });
+            });
+        });
+
+        const { data: teamResults, error: teamsError } =
+            await supabaseClient
+                .from("room_team_results")
+                .insert(teamRows)
+                .select("id, room_game_id, team_id");
+
+        if (teamsError) throw teamsError;
+
+        // Preparar kills de todos los jugadores
+        const killRows = [];
+
+        preparedGames.forEach(game => {
+            const savedGame = games.find(
+                item => item.game_number === game.gameNumber
+            );
+
+            game.teams.forEach(team => {
+                const savedTeam = teamResults.find(
+                    item =>
+                        item.room_game_id === savedGame.id &&
+                        item.team_id === team.teamId
+                );
+
+                team.players.forEach(player => {
+                    killRows.push({
+                        team_result_id: savedTeam.id,
+                        player_id: player.playerId,
+                        kills: player.kills
+                    });
+                });
+            });
+        });
+
+        if (killRows.length) {
+            const { error: killsError } = await supabaseClient
+                .from("room_player_kills")
+                .insert(killRows);
+
+            if (killsError) throw killsError;
+        }
+
+        showToast(`Sala ${roomNumber} guardada correctamente.`);
+
+        await cargarPartidasSupabase();
+        renderAll();
+
+        console.log("Jornada guardada en Supabase:", sessionId);
+
+    } catch (error) {
+        console.error("Error guardando la jornada:", error);
+
+        // Si algo falla, eliminar la jornada incompleta.
+        if (sessionId) {
+            const { error: deleteError } = await supabaseClient
+                .from("room_sessions")
+                .delete()
+                .eq("id", sessionId);
+
+            if (deleteError) {
+                console.error("Error limpiando la jornada:", deleteError);
+            }
+        }
+
+        showToast("No se pudo guardar la jornada. Revisa la consola.");
+    } finally {
+        saveButton.disabled = false;
+    }
+}
+
+
+$("saveRoom1Btn").addEventListener("click", () => {
+    guardarSala(1);
+});
+
+$("saveRoom2Btn").addEventListener("click", () => {
+    guardarSala(2);
+});
+
   function renderWeekSelect() {
     const weeks=allWeeks();
 
@@ -890,10 +1514,11 @@ if (type === "teams" && isOfficialRanking) {
   function renderAll() {
     renderWeekSelect();
     renderTeams();
+    renderGroups();
     renderDashboard();
     renderHistory();
     renderRankings();
-  }
+}
 
   function navigate(view) {
     document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
@@ -904,13 +1529,15 @@ if (type === "teams" && isOfficialRanking) {
 
     $(`view-${view}`).classList.add("active");
 
-    const titles={
-      dashboard:"Panel general",
-      teams:"Equipos y rosters",
-      register:"Registrar partida",
-      history:"Historial de partidas",
-      rankings:"Clasificaciones"
-    };
+    const titles = {
+       dashboard: "Panel general",
+       teams: "Equipos y rosters",
+       groups: "Administrar grupos",
+       sessions: "Registrar jornada",
+       register: "Registrar partida",
+       history: "Historial de partidas",
+       rankings: "Clasificaciones"
+  };
 
     $("pageTitle").textContent=titles[view]||"Panel";
     $("sidebar").classList.remove("open");
@@ -1440,7 +2067,7 @@ $("rosterList").addEventListener("click", e => {
         return;
     }
 
-    const inputs = [...document.querySelectorAll(".kill-input")];
+    const inputs = [...$("matchPlayers").querySelectorAll(".kill-input")];
 
     if (inputs.some(i =>
         i.value.trim() !== "" &&
@@ -1602,10 +2229,21 @@ $("rosterList").addEventListener("click", e => {
     }
 
     try {
-        const { error } = await supabaseClient
-            .from("matches")
-            .delete()
-            .eq("id", m.id);
+        let deleteQuery;
+
+        if (m.source === "room") {
+            deleteQuery = supabaseClient
+                .from("room_team_results")
+                .delete()
+                .eq("id", m.id);
+        } else {
+            deleteQuery = supabaseClient
+                .from("matches")
+                .delete()
+                .eq("id", m.id);
+        }
+
+        const { error } = await deleteQuery;
 
         if (error) throw error;
 
@@ -1619,7 +2257,7 @@ $("rosterList").addEventListener("click", e => {
         showToast("No se pudo eliminar la partida: " + error.message);
     }
 }
-  });
+});
 
   $("exportBtn").addEventListener("click",()=>{
     const data={

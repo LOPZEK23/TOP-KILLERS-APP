@@ -1883,3 +1883,199 @@ input[type=file] {
         grid-template-columns: 1fr;
     }
 }
+
+/* =================================
+   ADMINISTRAR GRUPOS
+================================= */
+
+.groups-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.group-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(145deg, #171a23, #101218);
+    border: 1px solid #303541;
+    border-radius: 13px;
+    padding: 20px;
+    transition: .25s ease;
+}
+
+.group-card:hover {
+    border-color: #665322;
+    transform: translateY(-2px);
+}
+
+.group-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #303440;
+}
+
+.group-card-header h3 {
+    margin: 0;
+    color: var(--gold);
+    font: 800 23px 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+}
+
+.group-card-header span {
+    background: #d4af3715;
+    border: 1px solid #665322;
+    color: var(--gold);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.group-team-select {
+    margin-bottom: 15px;
+    background: #0b0d12;
+    border-color: #383e4c;
+    cursor: pointer;
+}
+
+.group-team-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.group-team-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-width: 0;
+    min-height: 125px;
+    padding: 12px 6px;
+    background: #202530;
+    border: 1px solid #2d3441;
+    border-radius: 9px;
+}
+
+.group-team-logo .team-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.group-team-tag {
+    color: #ff626a;
+    font-size: 11px;
+    font-weight: 900;
+    text-align: center;
+}
+
+.group-team-name {
+    color: #dfe2e9;
+    font-size: 10px;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.remove-group-team {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    padding: 0;
+    background: #e5091415;
+    border: 1px solid #64252a;
+    color: #ff737b;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.remove-group-team:hover {
+    background: #e50914;
+    color: white;
+}
+
+.group-team-list .empty-state {
+    grid-column: 1 / -1;
+    background: #11141b;
+    border: 1px dashed #343947;
+}
+
+@media(max-width:760px) {
+    .groups-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .group-card {
+        padding: 15px;
+    }
+}
+
+/* VENTANA DE REGISTRO DE KILLS */
+#sessionKillsModal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+#sessionKillsModal.hidden {
+    display: none;
+}
+
+#sessionKillsModal .modal-content {
+    background: #151821;
+    border: 1px solid #343946;
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+#sessionKillsModal .panel-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#sessionKillsModal .panel-heading button {
+    background: transparent;
+    color: white;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+#sessionKillsPlayers {
+    display: grid;
+    gap: 12px;
+}
+
+#sessionKillsPlayers .match-player-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
