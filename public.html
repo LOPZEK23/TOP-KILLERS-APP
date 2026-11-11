@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#08090d">
+
+    <title>Clasificaciones | Esports</title>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="public.css">
+</head>
+
+<body>
+
+    <header class="public-header">
+        <h1>TABLAS COMPETITIVAS</h1>
+        <p>CLASIFICACIONES</p>
+    </header>
+
+    <main class="public-container">
+
+        <section class="public-tournament">
+    <div class="date-filter-info">
+        <span class="date-filter-icon">▦</span>
+        <div>
+            <h2>CONSULTAR CLASIFICACIÓN</h2>
+            <p>Selecciona una semana para consultar sus resultados</p>
+        </div>
+    </div>
+
+    <div class="date-filter-control">
+        <label for="publicWeekSelect">SEMANA</label>
+        <select id="publicWeekSelect"></select>
+    </div>
+
+    <p id="publicStatus">Cargando clasificaciones...</p>
+
+    <section class="public-rankings dashboard-grid">
+
+    <article class="panel ranking-panel">
+        <div class="panel-heading">
+            <div>
+                <span class="eyebrow">MVP</span>
+                <h3>Ranking individual</h3>
+            </div>
+        </div>
+
+        <div id="publicPlayersRanking"></div>
+    </article>
+
+    <article class="panel ranking-panel">
+        <div class="panel-heading">
+            <div>
+                <span class="eyebrow">AGRESIVIDAD</span>
+                <h3>Ranking de equipos</h3>
+            </div>
+        </div>
+
+        <div id="publicTeamsRanking"></div>
+    </article>
+
+</section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script src="public.js"></script>
+
+</body>
+</html>
