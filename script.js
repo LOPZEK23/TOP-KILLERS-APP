@@ -1159,13 +1159,13 @@ function renderSessionTeams(roomNumber) {
                             ${[1, 2, 3, 4, 5].map(game => `
                                 <td>
                                     <button
-                                        type="button"
-                                        class="session-game-btn"
-                                        data-room="${roomNumber}"
-                                        data-team="${team.id}"
-                                        data-game="${game}">
-                                        Registrar
-                                    </button>
+    type="button"
+    class="session-game-btn ${state.sessionResults[roomNumber][game + "_" + team.id] ? "saved" : ""}"
+    data-room="${roomNumber}"
+    data-team="${team.id}"
+    data-game="${game}">
+    ${state.sessionResults[roomNumber][game + "_" + team.id] ? "Guardado ✓" : "Registrar"}
+</button>
                                 </td>
                             `).join("")}
                         </tr>
@@ -1256,6 +1256,8 @@ $("saveSessionKills").addEventListener("click", () => {
     const key = `${gameNumber}_${teamId}`;
 
     state.sessionResults[roomNumber][key] = kills;
+
+    renderSessionTeams(roomNumber);
 
     $("sessionKillsModal").classList.add("hidden");
 
